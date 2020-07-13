@@ -1,0 +1,135 @@
+package movieReservation;
+
+import java.io.BufferedReader;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.Scanner;
+
+class Member {
+	
+	String id;
+	String pw;
+	String name;
+	Member(){
+		
+	}
+	public String getId() {
+		return id;
+	}
+	public void setId(String id) {
+		this.id = id;
+	}
+	public String getPw() {
+		return pw;
+	}
+	public void setPw(String pw) {
+		this.pw = pw;
+	}
+	public String getName() {
+		return name;
+	}
+	public void setName(String name) {
+		this.name = name;
+	}
+}
+
+public class Web2ClientTest1 {
+
+	public static void main(String[] args) throws Exception {
+		Socket socket = null;
+		PrintWriter out = null;
+		BufferedReader in = null;
+		ObjectInputStream ois = null; //서버로부터 읽어들일객체
+		ObjectOutputStream oos = null;
+		try{
+			socket = new Socket("127.0.0.1",7455);   // 또는 "localhost"
+			out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(),"utf-8"), true);
+			in = new BufferedReader(new InputStreamReader(socket.getInputStream(),"utf-8"));
+			ois = new ObjectInputStream(socket.getInputStream());
+			oos = new ObjectOutputStream(socket.getOutputStream());
+		}catch(UnknownHostException e){
+			System.err.println("localhost에 접근할 수 없습니다.");
+			//e.printStackTrace();
+			System.exit(-1);
+		}catch(IOException e){
+		//	e.printStackTrace();
+		System.err.println("입출력 오류11");
+			System.exit(-1);
+		}
+
+		Scanner sc = new Scanner(System.in);
+		
+		String message;  // 서버로부터의 문자열.
+		
+		//ArrayList<Movie> movies = new ArrayList<Movie>();//사용자가 선택한 영화들을담아두는곳.
+		//ArrayList<Theater>theaters = new ArrayList<Theater>();//사용자가선택한 
+		
+		
+		while((message=in.readLine())!=null){
+			System.out.println("서버 : "+ message);
+
+			System.out.print("입력 : ");
+			message = sc.nextLine();
+			if(message.equals("끝"))
+				break;
+
+			out.println(message);// 날리면 기다린다.
+			
+			switch(message) {
+			case "영화":
+				Movie userPickMovie = (Movie)(ois.readObject());//서버로보낼객체
+				//movies.add(userPickMovie);
+				System.out.println("<서버로부터 받은 영화객체1>");
+				
+				System.out.println("객체1의 내용: " + userPickMovie);
+				
+				System.out.print("영화를 선택하세요: ");
+				message = sc.nextLine();
+				switch(message) {
+				
+					case "라라랜드":
+						System.out.println("라라랜드 예약가능한 시간 " + userPickMovie.getHashMap().get("라라랜드"));
+						message = sc.nextLine();
+						
+						switch(message) {
+							case "19-07-2020 16:45:00":
+								out.println(userPickMovie.getHashMap().get("라라랜드").get(0) + "에 예매되었습니다.");
+							case "19-07-2020 19:10:00":
+								out.println(userPickMovie.getHashMap().get("라라랜드").get(1) + "에 예매되었습니다.");
+							case "19-07-2020 21:35:00":
+								out.println(userPickMovie.getHashMap().get("라라랜드").get(2) + "에 예매되었습니다.");
+							case "21-07-2020 09:30:00":
+								out.println(userPickMovie.getHashMap().get("라라랜드").get(3) + "에 예매되었습니다.");
+						}
+						break;
+					
+				}
+				
+				break;
+			case "극장":
+				Theater userPickTheater = (Theater)(ois.readObject());// 서버로부터의 객체2.
+				//theaters.add(userPickTheater);
+				System.out.println("<서버로부터 받은 객체2>");
+				System.out.println("객체2의 내용: " + userPickTheater);
+				break;
+			case "회원정보":
+				oos.writeObject(new Member());
+				out.println("회원정보 송신 완료");
+			}
+		}
+		System.out.println("프로그램 종료.");
+		
+		out.close();
+		in.close();
+		sc.close();
+		socket.close();
+	}
+
+}
