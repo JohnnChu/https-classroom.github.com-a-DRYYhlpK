@@ -1,0 +1,234 @@
+package movieReservation;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+
+class Movie implements Serializable {
+	
+	ArrayList<String>lala;
+	ArrayList<String>joker;
+	ArrayList<String>titanic;
+	ArrayList<String>ironMan;
+	
+	HashMap <String,ArrayList> moviesDate;
+	
+	double [] price;
+	
+	//SimpleDateFormat sdf = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");
+	
+	
+	public Movie() {
+		moviesDate = new HashMap<String,ArrayList>();
+		
+		try {
+			
+			lala = new ArrayList<String>();
+			lala.add("19-07-2020 16:45:00");
+			lala.add("19-07-2020 19:10:00");
+			lala.add("19-07-2020 21:35:00");
+			lala.add("21-07-2020 09:30:00");
+			
+			joker = new ArrayList<String>();
+			joker.add("19-07-2020 19:10:00");
+			joker.add("19-07-2020 16:15:00");
+			joker.add("20-07-2020 11:45:00");
+			joker.add("21-07-2020 14:35:00");
+			
+			titanic = new ArrayList<String>();
+			titanic.add("20-07-2020 21:50:00");
+			titanic.add("21-07-2020 09:25:00");
+			titanic.add("21-07-2020 11:50:00");
+			titanic.add("21-07-2020 14:15:00");
+			
+			ironMan = new ArrayList<String>();
+			ironMan.add("19-07-2020 15:45:00");
+			ironMan.add("19-07-2020 17:50:00");
+			ironMan.add("19-07-2020 19:55:00");
+			ironMan.add("20-07-2020 09:45:00");
+			ironMan.add("20-07-2020 12:10:00");
+			ironMan.add("20-07-2020 14:35:00");
+			
+			moviesDate.put("라라랜드", lala);
+			moviesDate.put("조커", joker);
+			moviesDate.put("타이타닉", titanic);
+			moviesDate.put("아이언맨", ironMan);
+			
+			try {
+				ObjectOutputStream oos1  =  new ObjectOutputStream(new FileOutputStream("movies.dat"));
+				
+				
+				oos1.writeObject(moviesDate);
+				
+				oos1.close();
+			}catch(Exception e) {
+				
+			}
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		
+		price = new double[] {7000,9500,8500,11000};
+	}
+
+	@Override
+	public String toString() {
+		return "Movie [moviesDate=" + moviesDate + ", price=" + Arrays.toString(price) + "]";
+	}
+
+	
+	public HashMap<String, ArrayList> getHashMap(){
+		return moviesDate;
+	}
+	
+	
+	
+
+}
+
+class Theater implements Serializable {
+	String [] name;
+	
+	Theater(){
+		name = new String[] {"구로", "화정", "대전", "용산", "부천"};
+		
+		try {
+			ObjectOutputStream oos1  =  new ObjectOutputStream(new FileOutputStream("theaters.dat"));
+			
+			
+			oos1.writeObject(name);
+			
+			oos1.close();
+		}catch(Exception e) {
+			
+		}
+	}
+	
+	/*public boolean checkReservable() {
+		if(ReserveSeat.selectedSeatNum.size() == 20) {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}*/
+	
+	public String[] getName() {
+		return name;
+	}
+
+	@Override
+	public String toString() {
+		return "Theater [name=" + Arrays.toString(name) + "]";
+	}
+	
+	
+}
+
+public class Web2ServerTest1 {
+	
+	
+	
+	public static void main(String[] args) throws IOException {
+		
+		//HashMap<String,Member>loginCheck = new HashMap<String,Member>();
+		
+		File fileMovie = new File("movies.dat");
+		File fileTheater = new File("theaters.dat");
+		
+		
+		
+		int port = 7455;
+		ServerSocket serverSocket = null;
+		try {
+			serverSocket = new ServerSocket(port);
+		} catch (IOException e) {
+			//System.out.println("다음의 포트 번호에 연결할 수 없습니다 : 9500");
+			//e.printStackTrace();
+			System.exit(-1);
+		}
+
+		Socket clientSocket = null;
+		try {
+			System.out.println("클라이언트 접속을 기다림.");
+			clientSocket = serverSocket.accept();
+		} catch (IOException e) {
+			System.err.println("accept() 실패 ");
+			//e.printStackTrace();
+			System.exit(-1);
+		}
+		
+		PrintWriter out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream(),"utf-8"), true);
+		BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), "utf-8"));
+		ObjectOutputStream oos = new ObjectOutputStream(clientSocket.getOutputStream());
+		ObjectInputStream ois = new ObjectInputStream(clientSocket.getInputStream());
+		
+		ObjectOutputStream oosMovie = new ObjectOutputStream(new FileOutputStream(fileMovie));
+		
+		ObjectOutputStream oosTheater = new ObjectOutputStream(new FileOutputStream(fileTheater));
+		//ObjectInputStream oisFile = new ObjectInputStream(new FileInputStream("members.dat"));
+		//영화, 극장, 회원관리를 관리하는 OOS로 설정해놓음
+		
+		String message;
+		//Member user;
+
+		out.println("접속되었습니다. (포트번호 : " + port + ")");
+		System.out.println("서버가 시작되었습니다.");
+		
+		while ((message = in.readLine()) != null) {
+			System.out.println("클라이언트로부터 전송된 메시지 : " + message);
+			if(message.equals("영화")) {
+				oos.writeObject(new Movie());//영화의 상영가능한날짜, 영화제목.
+				out.println("영화정보완료 전송완료.");
+				out.println("상영하실 영화를 선택해주세요.");
+				if(in.readLine().equals("라라랜드")) {
+					
+				}
+			} 
+			else if(message.equals("극장")) {
+				oos.writeObject(new Theater());
+				out.println("극장정보 전송완료.");
+			}
+			else if(message.equals("회원")) {
+				try {
+					
+					Member user = (Member)(ois.readObject());
+					
+					
+				} catch (Exception e) {
+					e.getMessage();
+				}
+				out.println("회원정보 수신완료");
+			}
+			else {
+				out.println(message+"!");
+			}
+			if (message.equals("끝"))
+				break;
+		}
+		System.out.println("클라이언트가 나갔습니다. 프로그램 종료.");
+		
+		oosMovie.close();
+		oosTheater.close();
+		out.close();
+		in.close();
+		oos.close();
+		clientSocket.close();
+		serverSocket.close();
+	}
+}
